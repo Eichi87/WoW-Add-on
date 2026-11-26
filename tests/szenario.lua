@@ -196,6 +196,7 @@ if rolle == "befunde" then
     Unbekannt = { charaktere = { ["Guile-"] = { name = "Guile", klasse = "WARRIOR", stufe = 10, berufe = {},
       ausruestung = {}, aktualisiert = time() - 900 } } } } }
   M.LadeAddon(addon)
+  Leuchtturm_Config.charaktere.Guile = nil   -- Zustand beim ersten Test: Guile fehlte in der Config
   Login()
   Ausgabe()
   Pruefe(LeuchtturmDB.spieler.Unbekannt == nil, "kein Spieler 'Unbekannt' mehr")
