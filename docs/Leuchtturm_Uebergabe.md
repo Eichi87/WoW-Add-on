@@ -1,4 +1,4 @@
-# Leuchtturm – Übergabe (Stand 26.11.2026, v0.4)
+# Leuchtturm – Übergabe (Stand 26.11.2026, v0.4.1)
 
 Eigenes WoW-Forever-Addon für Daniel und Julia (weitere Spieler wie Björn möglich).
 - Klassen-Leiste (v0.3): erinnert an fehlende/auslaufende Buffs und Ressourcen, Klick wirkt den Zauber, keine Automatisierung.
@@ -39,19 +39,21 @@ Eigenes WoW-Forever-Addon für Daniel und Julia (weitere Spieler wie Björn mög
 - v0.4: Derselbe Gegenstand wird beim Looten höchstens alle 60 s gemeldet; nur eigene Beute.
 
 ## Gespielte Klassen und Rollen
-Paladin Tank, Druide Tank, Priester Heilig; Krieger, Jäger, Magier, Hexenmeister, Schamane DD. Charakternamen in der Config sind noch Platzhalter.
+Paladin Tank, Druide Tank, Priester Heilig; Krieger, Jäger, Magier, Hexenmeister, Schamane DD. Echte Namen bisher: Daniel – Guile (Krieger, Bergbau/Schmiedekunst), Gomez (Hexenmeister, Schneiderei/Verzauberkunst). Die übrigen Config-Namen sind noch Platzhalter.
 
 ## Stand
 - v0.3-Logik (Leiste) getestet in nachgebauter WoW-Umgebung: alle Klassen, Kampf mit gesperrten Werten, Pet, Munition, Splitter, Waffe.
-- v0.4: `tests/alle_tests.sh` – 53 Prüfungen in der Mock-Umgebung, alle bestanden (Datenbasis, Loot-Hinweise, Handwerk, Tooltips inkl. 95-%-Grenze, Abgleich Julia → Daniel → Julia über das echte Python-Skript).
-- NICHT im echten Client getestet. Die Berufs-API ist doppelt umgesetzt (Mainline `C_TradeSkillUI`/`GetProfessions` und Classic `GetTradeSkillInfo`/`GetCraftInfo`/`GetSkillLineInfo`); welche Forever wirklich hat, zeigt erst der Ingame-Test.
+- v0.4: Hinweissystem, Mock-Test mit zwei PCs und echtem Python-Skript.
+- 26.11.2026 erster Ingame-Test v0.4.0 (Daniel, Guile + Gomez): Build 16001 bestätigt, keine Lua-Fehler, alle 5 Module laden, Leiste erkennt fehlenden Schlachtruf. Befunde: Guile ohne Config-Eintrag landete unter Spieler „Unbekannt“, Realm beim Login leer („Guile-“), Berufe wurden beim Logout gelöscht, Rezepte wurden in keinem Beruf erfasst (0 Rezepte), Hinweise blieben deshalb leer.
+- v0.4.1 behebt das: Spieler wird kontoweit gelernt und „Unbekannt“-Einträge umgezogen, Realm-Rückfall über `GetRealmName`, Berufe beim Logout nicht mehr neu gelesen, Berufserkennung unscharf („Classic-Schmiedekunst“), Rezepte erst über die moderne, dann über die klassische API, Meldung „X Rezepte gespeichert“, neuer Befehl `/ltm diagnose`.
+- `tests/alle_tests.sh`: 66 Prüfungen (davon 13 für die Befunde des Ingame-Tests), alle bestanden.
 
 ## Offene Punkte
-1. Erster Ingame-Test (Krieger zuerst): `/ltm`, `/ltm leiste`, Lua-Fehler zurückmelden.
-2. Prüfen: Interface-Nummer, Zauber-IDs/Namen im deutschen Client (unsicher v. a. Vergeltungsaura, Göttlicher Willen, Aura des Volltreffers), ob Klick den höchsten Rang wirkt.
-3. Echte Charakternamen eintragen (mit `spieler`).
-4. Hinweissystem ingame prüfen: Berufsfenster öffnen → `/ltm daten` zeigt Rezepte? Rezeptfarben richtig? Tooltip-Zeile und Vergleichs-Tooltip erscheinen? Loot-Hinweise im Chat?
-5. Syncthing einrichten und Hilfsskript bei Daniel und Julia starten; prüfen, dass `loadstring`/`setfenv` in Forever erlaubt sind (sonst meldet das Addon „Spielerdatei nicht lesbar“).
+1. Zweiter Ingame-Test mit v0.4.1: Berufsfenster öffnen → erscheint „… Rezepte gespeichert“? Sonst `/ltm diagnose` bei offenem Fenster als Screenshot.
+2. Danach Hinweise (Loot, `/ltm hinweis`, Tooltip) mit erfassten Rezepten prüfen.
+3. Prüfen: Zauber-Namen im deutschen Client (unsicher v. a. Vergeltungsaura, Göttlicher Willen, Aura des Volltreffers), ob Klick den höchsten Rang wirkt.
+4. Restliche echte Charakternamen eintragen (mit `spieler`), auch Julias.
+5. Syncthing einrichten und Hilfsskript bei Daniel und Julia starten; prüfen, dass `loadstring`/`setfenv` in Forever erlaubt sind (`/ltm diagnose` zeigt das).
 6. Spätere Ideen: Konfiguration im Spiel statt Datei, Autostart des Hilfsskripts, Hinweise optional zusätzlich im Tooltip.
 
 ## Ausbaustufe 2: Abweichungen vom Auftrag

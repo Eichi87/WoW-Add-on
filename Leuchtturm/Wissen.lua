@@ -45,9 +45,17 @@ for key, b in pairs(W.BERUFE) do
 end
 
 -- Liefert den Berufsschlüssel zu Name (deutsch/englisch) oder Skill-Linie
+-- Unscharf: auch "Classic-Schmiedekunst", "Schmiedekunst (Classic)" o. Ä.
 function W.BerufSchluessel(nameOderSkill)
   if type(nameOderSkill) == "number" then return berufNachSkill[nameOderSkill] end
-  if type(nameOderSkill) == "string" then return berufNachName[nameOderSkill:lower()] end
+  if type(nameOderSkill) ~= "string" or nameOderSkill == "" then return nil end
+  local klein = nameOderSkill:lower()
+  if berufNachName[klein] then return berufNachName[klein] end
+  local besterKey, besteLaenge = nil, 0
+  for n, key in pairs(berufNachName) do
+    if #n > besteLaenge and klein:find(n, 1, true) then besterKey, besteLaenge = key, #n end
+  end
+  return besterKey
 end
 
 function W.BerufIgnoriert(key)

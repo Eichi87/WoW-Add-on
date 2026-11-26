@@ -102,7 +102,8 @@ ns:RegistriereModul({
           for _, x in pairs(e.c.berufe or {}) do
             local r = 0
             for _ in pairs(x.rezepte or {}) do r = r + 1 end
-            b[#b + 1] = ("%s %s/%s (%d Rezepte)"):format(x.name, tostring(x.stufe or "?"), tostring(x.max or "?"), r)
+            b[#b + 1] = ("%s %s/%s (%s)"):format(x.name, tostring(x.stufe or "?"), tostring(x.max or "?"),
+              x.rezepteStand and (r .. " Rezepte") or "Rezepte offen – Berufsfenster öffnen")
           end
           table.sort(b)
           ns.Ausgabe(("  %s, Stufe %s: %s – %s"):format(W.Bezeichnung(e), tostring(e.c.stufe or "?"),

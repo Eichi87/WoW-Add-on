@@ -50,13 +50,13 @@ Leuchtturm_Config = {
 
   charaktere = {
     -- Namen ersetzen bzw. Zeilen ergänzen:
-    ["Kriegername"]    = { spieler = "Daniel", klasse = "WARRIOR", rolle = "DD" },
+    ["Guile"]          = { spieler = "Daniel", klasse = "WARRIOR", rolle = "DD" },
     ["Paladinname"]    = { spieler = "Daniel", klasse = "PALADIN", rolle = "Tank",   spec = "Schutz" },
     ["Druidenname"]    = { spieler = "Julia",  klasse = "DRUID",   rolle = "Tank",   spec = "Wilder Kampf" },
     ["Priestername"]   = { spieler = "Julia",  klasse = "PRIEST",  rolle = "Heiler", spec = "Heilig" },
     ["Jaegername"]     = { spieler = "Daniel", klasse = "HUNTER",  rolle = "DD" },
     ["Magiername"]     = { spieler = "Julia",  klasse = "MAGE",    rolle = "DD" },
-    ["Hexername"]      = { spieler = "Daniel", klasse = "WARLOCK", rolle = "DD" },
+    ["Gomez"]          = { spieler = "Daniel", klasse = "WARLOCK", rolle = "DD" },
     ["Schamanenname"]  = { spieler = "Julia",  klasse = "SHAMAN",  rolle = "DD" },
     -- weitere Spieler einfach dazuschreiben, z. B.:
     -- ["Bjoernsname"] = { spieler = "Björn", klasse = "ROGUE", rolle = "DD" },

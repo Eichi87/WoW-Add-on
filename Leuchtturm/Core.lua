@@ -103,10 +103,28 @@ local function ErmittleSpecAusSpiel()
   if ok2 and type(name) == "string" and name ~= "" then return name end
 end
 
+-- Spieler dieses WoW-Kontos: per /ltm ich gesetzt oder automatisch gelernt
+function ns.KontoSpieler()
+  local db = LeuchtturmDB or {}
+  if db.ich then return db.ich end
+  local gefunden
+  for name in pairs(db.spieler or {}) do
+    if name ~= "Unbekannt" then
+      if gefunden then return nil end   -- mehrere Spieler: nicht raten
+      gefunden = name
+    end
+  end
+  return gefunden
+end
+
 local function ErmittleKontext()
   local cfg      = Leuchtturm_Config or {}
   local name     = UnitName("player")
   local realm    = GetNormalizedRealmName and GetNormalizedRealmName() or nil
+  if (realm == nil or realm == "") and GetRealmName then   -- beim Login teils noch leer
+    realm = (GetRealmName() or ""):gsub("[%s%-]", "")
+  end
+  if realm == "" then realm = nil end
   local _, klasse = UnitClass("player")
 
   local liste  = cfg.charaktere or {}
@@ -117,8 +135,9 @@ local function ErmittleKontext()
     realm    = realm,
     klasse   = klasse,
     eintrag  = eintrag,
-    -- Spieler: aus der Config, sonst per /ltm ich <Name> gesetzt
-    spieler  = (eintrag and eintrag.spieler) or (LeuchtturmDB and LeuchtturmDB.ich) or nil,
+    -- Spieler: aus der Config, sonst /ltm ich <Name>, sonst der Spieler, dem
+    -- die übrigen Charaktere dieses Kontos gehören (Datenbasis ist kontoweit)
+    spieler  = (eintrag and eintrag.spieler) or ns.KontoSpieler() or nil,
     rolle    = eintrag and eintrag.rolle or nil,
     spec     = (eintrag and eintrag.spec) or ErmittleSpecAusSpiel(),
   }
@@ -194,8 +213,11 @@ SlashCmdList.LEUCHTTURM = function(eingabe)
     local ctx = ns.kontext
     if not ctx then return end
     ns.Ausgabe(("%s-%s | Klasse: %s | Rolle: %s | Spec: %s | Spieler: %s"):format(
-      tostring(ctx.name), tostring(ctx.realm), tostring(ctx.klasse), tostring(ctx.rolle or "–"),
+      tostring(ctx.name), tostring(ctx.realm or "?"), tostring(ctx.klasse), ctx.rolle or "DD (Standard)",
       tostring(ctx.spec or "–"), tostring(ctx.spieler or "–")))
+    if not ctx.eintrag then
+      ns.Ausgabe("Dieser Charakter steht nicht in Config.lua – Rolle und Spec dort eintragen.")
+    end
     ns.Ausgabe("Aktive Module: " .. (#ctx.aktiveModule > 0 and table.concat(ctx.aktiveModule, ", ") or "keine"))
     local woerter = {}
     for w in pairs(ns.befehle) do woerter[#woerter + 1] = w end

@@ -181,5 +181,56 @@ elseif rolle == "daniel" then
   M.SchreibeSV(wtf .. "/Leuchtturm.lua")
 end
 
+-- ============================================================================
+-- Nachgestellte Befunde aus Daniels erstem Ingame-Test (26.11.2026)
+if rolle == "befunde" then
+  -- Guile ist nicht in der Config, Realm beim Login leer; Gomez (Daniel) gibt es schon,
+  -- dazu ein alter Eintrag "Guile-" unter "Unbekannt" aus v0.4.0
+  M.spieler = { name = "Guile", realm = "Forever", realmAnzeige = "Forever", klasse = "WARRIOR", stufe = 10, sex = 2 }
+  M.realmLeer = true
+  M.ausruestung = { [5] = 9004 }
+  M.berufe = { { name = "Bergbau", stufe = 57, max = 75, skill = 186 }, { name = "Schmiedekunst", stufe = 34, max = 75, skill = 164 } }
+  LeuchtturmDB = { spieler = {
+    Daniel = { charaktere = { ["Gomez-Forever"] = { name = "Gomez", realm = "Forever", klasse = "WARLOCK", stufe = 23,
+      berufe = { SCHNEIDEREI = { name = "Schneiderei", stufe = 74, max = 150, rezepte = {} } }, ausruestung = {}, aktualisiert = time() - 600 } } },
+    Unbekannt = { charaktere = { ["Guile-"] = { name = "Guile", klasse = "WARRIOR", stufe = 10, berufe = {},
+      ausruestung = {}, aktualisiert = time() - 900 } } } } }
+  M.LadeAddon(addon)
+  Login()
+  Ausgabe()
+  Pruefe(LeuchtturmDB.spieler.Unbekannt == nil, "kein Spieler 'Unbekannt' mehr")
+  Pruefe(LeuchtturmDB.spieler.Daniel.charaktere["Guile-Forever"] ~= nil, "Guile unter Daniel mit Realm aus GetRealmName")
+  Pruefe(LeuchtturmDB.spieler.Daniel.charaktere["Guile-"] == nil, "alter Schlüssel ohne Realm entfernt")
+  Pruefe(LeuchtturmDB.ich == "Daniel", "Spieler des Kontos gemerkt")
+  local t = Befehl("")
+  Pruefe(Enthaelt(t, "Rolle: DD (Standard)") and Enthaelt(t, "Spieler: Daniel"), "/ltm zeigt Standardrolle und Spieler")
+  Pruefe(Enthaelt(t, "nicht in Config.lua"), "/ltm weist auf fehlenden Config-Eintrag hin")
+  local c = LeuchtturmDB.spieler.Daniel.charaktere["Guile-Forever"]
+  -- /ltm hinweis ohne erfasste Rezepte erklärt warum
+  t = Befehl("hinweis " .. M.Link(2840))
+  Pruefe(Enthaelt(t, "Rezepte noch nicht erfasst bei") and Enthaelt(t, "Guile (Schmiedekunst)"), "Hinweis erklärt fehlende Rezepte")
+  -- Moderne API mit unbekannter ID und Namen "Classic-Schmiedekunst"
+  Fenster({ professionID = 2477, professionName = "Classic-Schmiedekunst", skillLevel = 34, maxSkillLevel = 75, rezepte = {
+    { name = "Kupferkettenweste", farbe = 0, ergebnis = 3471, zutaten = { [2840] = 8 } } } })
+  t = Ausgabe()
+  Pruefe(c.berufe.SCHMIEDEKUNST.rezepte.Kupferkettenweste ~= nil, "unscharfe Berufserkennung (Classic-Schmiedekunst)")
+  Pruefe(Enthaelt(t, "Schmiedekunst: 1 Rezepte gespeichert."), "Rückmeldung nach dem Erfassen")
+  -- Moderne API liefert nichts → klassische API
+  M.fenster = { professionID = 186, professionName = "Bergbau", skillLevel = 57, maxSkillLevel = 75, rezepte = {} }
+  M.altFenster = { name = "Verhüttung", stufe = 57, max = 75, rezepte = {
+    { name = "Kupfer verhütten", farbe = 2, ergebnis = 2840, zutaten = { [2770] = 1 } } } }
+  M.Feuer("TRADE_SKILL_SHOW"); M.Timer()
+  Pruefe(c.berufe.BERGBAU.rezepte["Kupfer verhütten"] and c.berufe.BERGBAU.rezepte["Kupfer verhütten"].farbe == "grün",
+    "Rückfall auf klassische API")
+  t = Befehl("diagnose")
+  Pruefe(Enthaelt(t, "klassische API: trade: Beruf Verhüttung") and Enthaelt(t, "0 Rezept-IDs"), "/ltm diagnose zeigt beide APIs")
+  -- Logout: Spiel liefert keine Berufe mehr → nichts löschen
+  M.logout = true; M.Feuer("PLAYER_LOGOUT"); M.Timer()
+  Pruefe(c.berufe.SCHMIEDEKUNST and c.berufe.BERGBAU, "Berufe überstehen den Logout")
+  t = Befehl("daten")
+  print(t)
+  Pruefe(Enthaelt(t, "Gomez") and Enthaelt(t, "Rezepte offen"), "/ltm daten zeigt offene Rezepte")
+end
+
 print(("%s: %d Prüfungen bestanden, %d Fehler"):format(rolle, gut, fehler))
 os.exit(fehler == 0 and 0 or 1)

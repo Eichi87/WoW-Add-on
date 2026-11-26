@@ -1,4 +1,4 @@
-# Leuchtturm – Addon für WoW: Forever (v0.4)
+# Leuchtturm – Addon für WoW: Forever (v0.4.1)
 
 Zwei Teile:
 - **Klassen-Leiste** (seit v0.3): erinnert an fehlende/auslaufende Buffs und Ressourcen, Klick wirkt den Zauber.
@@ -19,6 +19,9 @@ bei allen gleich sein und alle eure Charaktere enthalten.
 ## Config
 `Config.lua` mit einem Texteditor öffnen (z. B. Notepad++), Charakternamen eintragen und
 bei jedem Charakter `spieler` setzen (Daniel, Julia, später Björn …), im Spiel `/reload`.
+Fehlt ein Charakter in der Config, ordnet Leuchtturm ihn automatisch dem Spieler zu, dem die
+anderen Charaktere dieses WoW-Kontos gehören. Nur wenn auf einem Konto noch gar kein Charakter
+bekannt ist, einmal `/ltm ich Daniel` (bzw. Julia) eingeben. Ohne Config-Eintrag gilt Rolle „DD".
 Klasse wird automatisch erkannt, Rolle und Spec kommen aus der Config. Was die Leiste je
 Klasse anzeigt, steht ebenfalls dort. Unter `module` lässt sich jedes Modul abschalten.
 
@@ -32,7 +35,8 @@ Klasse anzeigt, steht ebenfalls dort. Unter `module` lässt sich jedes Modul abs
 | `/ltm daten`     | alle Spieler und Charaktere mit Berufen, Rezeptzahl und Datenstand |
 | `/ltm neu`       | neu laden (= `/reload`), um frische Daten der anderen einzulesen  |
 | `/ltm hinweis [Link]` | Hinweise zu einem Gegenstand (Link per Shift-Klick einfügen) |
-| `/ltm ich Name`  | Spieler für Charaktere setzen, die nicht in der Config stehen     |
+| `/ltm ich Name`  | Spieler für dieses WoW-Konto setzen (meist nicht nötig, siehe unten) |
+| `/ltm diagnose`  | technische Infos zur Fehlersuche (bei offenem Berufsfenster)      |
 
 ## Leiste
 - Ein Button pro Eintrag. Linksklick wirkt den Zauber auf dich selbst,
@@ -46,7 +50,9 @@ Klasse anzeigt, steht ebenfalls dort. Unter `module` lässt sich jedes Modul abs
 **Was gespeichert wird** (bei Login, Logout, jedem Ausrüstungswechsel, Stufen- und Skill-Änderung):
 Name, Klasse, Rolle/Spec, Stufe, Berufe mit Skill, getragene Ausrüstung je Slot und ein Zeitstempel.
 **Rezepte** liefert das Spiel nur bei offenem Berufsfenster: also jeden Beruf **einmal öffnen**,
-danach aktualisiert sich die Liste bei jedem Öffnen. Angeln, Erste Hilfe und Kochen werden ignoriert.
+danach aktualisiert sich die Liste bei jedem Öffnen; Leuchtturm meldet dann z. B. „Schmiedekunst: 42 Rezepte
+gespeichert.". `/ltm daten` zeigt „Rezepte offen", solange ein Beruf noch nicht geöffnet wurde.
+Angeln, Erste Hilfe und Kochen werden ignoriert.
 
 **Beim Looten** (Beutefenster oder „Ihr erhaltet …") erscheint im Chat:
 - *Rezept fehlt bei:* alle Charaktere mit dem Beruf, die das Rezept noch nicht kennen

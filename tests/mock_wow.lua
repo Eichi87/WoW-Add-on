@@ -130,7 +130,8 @@ end }
 M.spieler = { name = "Kriegername", realm = "Forever", klasse = "WARRIOR", stufe = 20, sex = 2 }
 M.ausruestung = {}
 function UnitName() return M.spieler.name end
-function GetNormalizedRealmName() return M.spieler.realm end
+function GetNormalizedRealmName() if M.realmLeer then return nil end return M.spieler.realm end
+function GetRealmName() return M.spieler.realmAnzeige or M.spieler.realm end
 function UnitClass() return M.spieler.klasse, M.spieler.klasse end
 function UnitLevel() return M.spieler.stufe end
 function UnitSex() return M.spieler.sex end
@@ -150,6 +151,7 @@ C_Spell = {
 -- Berufe (Mainline-API)
 M.berufe = {}   -- { {name, stufe, max, skill} }
 function GetProfessions()
+  if M.logout then return nil end
   local b = M.berufe
   return b[1] and 1 or nil, b[2] and 2 or nil, nil, nil, b[5] and 5 or nil
 end
@@ -171,6 +173,26 @@ C_TradeSkillUI = {
     for zid, n in pairs(r.zutaten) do slots[#slots + 1] = { reagents = { { itemID = zid } }, quantityRequired = n, required = true } end
     return { outputItemID = r.ergebnis, reagentSlotSchematics = slots } end,
 }
+
+-- Klassische Berufs-API (Fenster über M.altFenster = { name, stufe, max, rezepte = {…} })
+function GetTradeSkillLine() local f = M.altFenster if f then return f.name, f.stufe, f.max end return "UNKNOWN", 0, 0 end
+function GetNumTradeSkills() return M.altFenster and (#M.altFenster.rezepte + 1) or 0 end
+local FARBE_TEXT = { [0] = "optimal", "medium", "easy", "trivial" }
+function GetTradeSkillInfo(i)
+  if i == 1 then return "Rüstung", "header" end
+  local r = M.altFenster.rezepte[i - 1]
+  return r.name, FARBE_TEXT[r.farbe]
+end
+function GetTradeSkillItemLink(i) return M.Link(M.altFenster.rezepte[i - 1].ergebnis) end
+local function Zutatenliste(i)
+  local t = {}
+  for id, n in pairs(M.altFenster.rezepte[i - 1].zutaten) do t[#t + 1] = { id, n } end
+  return t
+end
+function GetTradeSkillNumReagents(i) return #Zutatenliste(i) end
+function GetTradeSkillReagentItemLink(i, r) return M.Link(Zutatenliste(i)[r][1]) end
+function GetTradeSkillReagentInfo(i, r) local z = Zutatenliste(i)[r]; return M.items[z[1]].name, 0, z[2], 0 end
+ExpandTradeSkillSubClass = function() end
 
 -- Beute
 M.beute = {}

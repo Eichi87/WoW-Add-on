@@ -49,21 +49,46 @@ ns:RegistriereModul({
     DB.version = 1
     DB.spieler = DB.spieler or {}
 
-    local spieler = ctx.spieler or DB.ich or "Unbekannt"
-    local key = ctx.name .. "-" .. (ctx.realm or "")
+    local spieler = ctx.spieler or "Unbekannt"
+    local key = ctx.realm and (ctx.name .. "-" .. ctx.realm) or ctx.name
     ns.ich, ns.charKey = spieler, key
+    -- Kontoweite Datenbasis = ein Spieler: den ersten bekannten Namen merken
+    if spieler ~= "Unbekannt" and not DB.ich then DB.ich = spieler end
 
     DB.spieler[spieler] = DB.spieler[spieler] or { charaktere = {} }
     local sp = DB.spieler[spieler]
     sp.charaktere = sp.charaktere or {}
+
+    -- Aufräumen: alter Schlüssel ohne Realm ("Name-"), Charaktere unter
+    -- "Unbekannt" gehören zum Spieler dieses Kontos, Doppelte entfernen
+    local umzug = {}   -- erst sammeln, dann verschieben (Tabellen nicht beim Durchlaufen ändern)
+    for andererName, anderer in pairs(DB.spieler) do
+      for k, ch in pairs(anderer.charaktere or {}) do
+        local alterSchluessel = (k == ctx.name .. "-") or (k == ctx.name and key ~= ctx.name)
+        local fremdAbgelegt = andererName ~= spieler and spieler ~= "Unbekannt"
+                              and (k == key or andererName == "Unbekannt")
+        if alterSchluessel or fremdAbgelegt then
+          local ziel = alterSchluessel and key or (k:match("%-$") and k:sub(1, -2) or k)
+          umzug[#umzug + 1] = { von = anderer.charaktere, k = k, ziel = ziel, ch = ch }
+        end
+      end
+    end
+    for _, u in ipairs(umzug) do
+      u.von[u.k] = nil
+      local da = sp.charaktere[u.ziel]
+      if not da or (u.ch.aktualisiert or 0) > (da.aktualisiert or 0) then sp.charaktere[u.ziel] = u.ch end
+    end
+    for andererName, anderer in pairs(DB.spieler) do
+      if andererName ~= spieler and not next(anderer.charaktere or {}) then DB.spieler[andererName] = nil end
+    end
+
     sp.charaktere[key] = sp.charaktere[key] or {}
     local c = sp.charaktere[key]
     c.berufe, c.ausruestung = c.berufe or {}, c.ausruestung or {}
 
-    -- Falls der Charakter früher unter einem anderen Spieler lag: dort entfernen
-    for andererName, anderer in pairs(DB.spieler) do
-      if andererName ~= spieler and anderer.charaktere then anderer.charaktere[key] = nil end
-    end
+    -- Diagnose für /ltm diagnose
+    local diag = { berufe = "noch nicht gelesen", rezepte = "Berufsfenster noch nicht geöffnet" }
+    ns.diagnose = diag
 
     local function Stempel() c.aktualisiert = time() end
 
@@ -110,9 +135,15 @@ ns:RegistriereModul({
           end
         end
       else
+        diag.berufe = "keine Berufs-API gefunden"
         return
       end
-      -- verlernte Berufe entfernen
+      local n = 0
+      for _ in pairs(gefunden) do n = n + 1 end
+      diag.berufe = ("%d Beruf(e) gelesen über %s"):format(n, GetProfessions and "GetProfessions" or "GetSkillLineInfo")
+      -- verlernte Berufe entfernen – aber nur, wenn das Spiel überhaupt Berufe
+      -- geliefert hat (beim Logout liefert es teils nichts mehr)
+      if n == 0 then return end
       for bkey in pairs(c.berufe) do
         if not gefunden[bkey] then c.berufe[bkey] = nil end
       end
@@ -137,15 +168,18 @@ ns:RegistriereModul({
       if W.Sicher(T.IsTradeSkillLinked) or W.Sicher(T.IsTradeSkillGuild)
          or W.Sicher(T.IsNPCCrafting) then return end
       local basis = W.Sicher(T.GetBaseProfessionInfo) or W.Sicher(T.GetChildProfessionInfo)
-      if not basis then return end
+      if not basis then diag.neu = "GetBaseProfessionInfo lieferte nichts" return end
       local bkey = W.BerufSchluessel(basis.professionID) or W.BerufSchluessel(basis.parentProfessionID)
-                   or W.BerufSchluessel(basis.professionName) or W.BerufSchluessel(basis.parentProfessionName)
+                   or W.BerufSchluessel(basis.parentProfessionName) or W.BerufSchluessel(basis.professionName)
+      diag.neu = ("Beruf %s / %s (ID %s/%s) → %s"):format(tostring(basis.professionName),
+        tostring(basis.parentProfessionName), tostring(basis.professionID), tostring(basis.parentProfessionID), tostring(bkey))
       if not bkey or W.BerufIgnoriert(bkey) then return end
       Beruf(bkey, basis.professionName, basis.skillLevel or (c.berufe[bkey] and c.berufe[bkey].stufe),
             basis.maxSkillLevel or (c.berufe[bkey] and c.berufe[bkey].max))
       local ids = W.Sicher(T.GetAllRecipeIDs)
-      if not ids then return end
-      local rezepte = {}
+      diag.neu = diag.neu .. (", %d Rezept-IDs"):format(ids and #ids or 0)
+      if not ids or #ids == 0 then return end
+      local rezepte, anzahl = {}, 0
       for _, id in ipairs(ids) do
         local r = W.Sicher(T.GetRecipeInfo, id)
         if r and r.learned and not r.isRecraft then
@@ -165,8 +199,11 @@ ns:RegistriereModul({
             end
           end
           Rezept(rezepte, r.name, farbe, id, ergebnisLink, zutaten)
+          if rezepte[r.name] then anzahl = anzahl + 1 end
         end
       end
+      diag.neu = diag.neu .. (", %d gelernt erfasst"):format(anzahl)
+      if anzahl == 0 then return end
       c.berufe[bkey].rezepte, c.berufe[bkey].rezepteStand = rezepte, time()
       return bkey
     end
@@ -175,16 +212,20 @@ ns:RegistriereModul({
       local P = (art == "craft")
         and { linie = GetCraftDisplaySkillLine, anzahl = GetNumCrafts, info = GetCraftInfo,
               link = GetCraftItemLink, nReag = GetCraftNumReagents, reagLink = GetCraftReagentItemLink,
-              reagInfo = GetCraftReagentInfo }
+              reagInfo = GetCraftReagentInfo, expandieren = ExpandCraftSkillLine }
         or  { linie = GetTradeSkillLine, anzahl = GetNumTradeSkills, info = GetTradeSkillInfo,
               link = GetTradeSkillItemLink, nReag = GetTradeSkillNumReagents,
-              reagLink = GetTradeSkillReagentItemLink, reagInfo = GetTradeSkillReagentInfo }
+              reagLink = GetTradeSkillReagentItemLink, reagInfo = GetTradeSkillReagentInfo,
+              expandieren = ExpandTradeSkillSubClass }
       if not (P.linie and P.anzahl and P.info) then return end
       local name, stufe, max = W.Sicher(P.linie)
       local bkey = W.BerufSchluessel(name)
+      diag.alt = ("%s: Beruf %s (%s/%s) → %s, %d Zeilen"):format(art, tostring(name), tostring(stufe),
+        tostring(max), tostring(bkey), W.Sicher(P.anzahl) or 0)
       if not bkey or W.BerufIgnoriert(bkey) then return end
       Beruf(bkey, name, stufe, max)
-      local rezepte = {}
+      if P.expandieren then pcall(P.expandieren, 0) end
+      local rezepte, anzahl = {}, 0
       for i = 1, (W.Sicher(P.anzahl) or 0) do
         local rname, typ
         if art == "craft" then
@@ -203,8 +244,11 @@ ns:RegistriereModul({
           local link = P.link and W.Sicher(P.link, i)
           if link and not link:find("item:") then link = nil end  -- Verzauberungen: kein Gegenstand
           Rezept(rezepte, rname, farbe, nil, link, zutaten)
+          anzahl = anzahl + 1
         end
       end
+      diag.alt = diag.alt .. (", %d Rezepte erfasst"):format(anzahl)
+      if anzahl == 0 then return end
       c.berufe[bkey].rezepte, c.berufe[bkey].rezepteStand = rezepte, time()
       return bkey
     end
@@ -215,21 +259,40 @@ ns:RegistriereModul({
       rezeptGeplant = true
       Spaeter(0.5, function()
         rezeptGeplant = false
-        local ok, bkey
+        -- erst die moderne API, liefert sie nichts, die klassische
+        local ok, bkey = true, nil
+        diag.neu, diag.alt = nil, nil
         if art ~= "craft" and C_TradeSkillUI and C_TradeSkillUI.GetAllRecipeIDs then
           ok, bkey = pcall(RezepteNeu)
-        else
-          ok, bkey = pcall(RezepteAlt, art)
+          if not ok then diag.neu = "Fehler: " .. tostring(bkey) end
         end
-        if not ok then ns.Ausgabe("|cffff5555Rezepte erfassen fehlgeschlagen:|r " .. tostring(bkey)) end
-        if ok and bkey then Stempel() end
+        if not (ok and bkey) then
+          ok, bkey = pcall(RezepteAlt, art)
+          if not ok then diag.alt = "Fehler: " .. tostring(bkey) end
+        end
+        diag.rezepte = (ok and bkey) and ("zuletzt erfasst: " .. W.BERUFE[bkey].name) or "Erfassung lieferte nichts"
+        if ok and bkey then
+          Stempel()
+          local b = c.berufe[bkey]
+          local n = 0
+          for _ in pairs(b.rezepte or {}) do n = n + 1 end
+          if b.gemeldet ~= n then
+            b.gemeldet = n
+            ns.Ausgabe(("%s: %d Rezepte gespeichert."):format(b.name, n))
+          end
+        end
       end)
     end
 
     -- -----------------------------------------------------------------
     -- Ausrüstung
     -- -----------------------------------------------------------------
-    local function Ausruestung()
+    local function Ausruestung(nurWennDa)
+      if nurWennDa then   -- beim Logout: nichts überschreiben, wenn das Spiel nichts mehr liefert
+        local irgendwas = false
+        for slot = 1, 19 do if W.Sicher(GetInventoryItemLink, "player", slot) then irgendwas = true break end end
+        if not irgendwas then return end
+      end
       for slot = 1, 19 do
         local link = W.Sicher(GetInventoryItemLink, "player", slot)
         if link then
@@ -268,7 +331,8 @@ ns:RegistriereModul({
     local ausrGeplant = false
     ev:SetScript("OnEvent", function(_, ereignis)
       if ereignis == "PLAYER_LOGOUT" then
-        Alles()                               -- letzter Stand vor dem Speichern
+        -- letzter Stand vor dem Speichern; Berufe nicht neu lesen (liefert beim Logout teils nichts)
+        pcall(Grunddaten); pcall(Ausruestung, true); Stempel()
       elseif ereignis == "PLAYER_EQUIPMENT_CHANGED" then
         if ausrGeplant then return end
         ausrGeplant = true
@@ -290,10 +354,27 @@ ns:RegistriereModul({
     -- -----------------------------------------------------------------
     -- Befehle
     -- -----------------------------------------------------------------
-    ns:RegistriereBefehl("ich", "Spielername für Charaktere ohne Config-Eintrag setzen (z. B. /ltm ich Julia)", function(rest)
+    ns:RegistriereBefehl("ich", "Spielername für dieses WoW-Konto setzen (z. B. /ltm ich Julia)", function(rest)
       if rest == "" then ns.Ausgabe("Spieler: " .. tostring(ns.ich)) return end
       DB.ich = rest
-      ns.Ausgabe(("Spieler gesetzt: %s – wirkt nach /reload."):format(rest))
+      ns.Ausgabe(("Spieler gesetzt: %s – wirkt nach /reload (/ltm neu)."):format(rest))
+    end)
+    ns:RegistriereBefehl("diagnose", "Technische Infos für Claude (bei offenem Berufsfenster eingeben)", function()
+      ns.Ausgabe(("Version %s | Charakter %s | Spieler %s"):format(
+        tostring(C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(ADDON, "Version")
+                 or (GetAddOnMetadata and GetAddOnMetadata(ADDON, "Version"))), key, spieler))
+      ns.Ausgabe("Berufe: " .. tostring(diag.berufe))
+      ns.Ausgabe("Rezepte: " .. tostring(diag.rezepte))
+      ns.Ausgabe("  moderne API: " .. tostring(diag.neu or (C_TradeSkillUI and C_TradeSkillUI.GetAllRecipeIDs and "nicht benutzt" or "fehlt")))
+      ns.Ausgabe("  klassische API: " .. tostring(diag.alt or (GetTradeSkillLine and "nicht benutzt" or "fehlt")))
+      local apis = {}
+      for _, n in ipairs({ "GetProfessions", "GetSkillLineInfo", "GetTradeSkillLine", "GetNumTradeSkills",
+                           "GetCraftDisplaySkillLine", "GetItemStats", "loadstring", "setfenv" }) do
+        apis[#apis + 1] = n .. (_G[n] and "+" or "-")
+      end
+      apis[#apis + 1] = "C_TradeSkillUI" .. (C_TradeSkillUI and "+" or "-")
+      apis[#apis + 1] = "TooltipDataProcessor" .. (TooltipDataProcessor and "+" or "-")
+      ns.Ausgabe("APIs: " .. table.concat(apis, " "))
     end)
   end,
 })
