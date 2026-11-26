@@ -1,7 +1,11 @@
 --[[ Leuchtturm – Kern
   Erkennt Charakter, Klasse und Spezialisierung, liest die Config und
   startet die passenden Module. Module registrieren sich über
-  ns:RegistriereModul{ ... } (siehe Module\Krieger_Schlachtruf.lua).
+  ns:RegistriereModul{ ... } (siehe Module\Leiste.lua).
+  Gespeicherte Variablen:
+   LeuchtturmDB     – kontoweit: Datenbasis aller eigenen Charaktere
+                      (wird per Hilfsskript mit den anderen Spielern geteilt)
+   LeuchtturmCharDB – je Charakter: Einstellungen der Module (z. B. Leistenposition)
 ]]
 
 local ADDON, ns = ...
@@ -113,7 +117,8 @@ local function ErmittleKontext()
     realm    = realm,
     klasse   = klasse,
     eintrag  = eintrag,
-    spieler  = eintrag and eintrag.spieler or nil,
+    -- Spieler: aus der Config, sonst per /ltm ich <Name> gesetzt
+    spieler  = (eintrag and eintrag.spieler) or (LeuchtturmDB and LeuchtturmDB.ich) or nil,
     rolle    = eintrag and eintrag.rolle or nil,
     spec     = (eintrag and eintrag.spec) or ErmittleSpecAusSpiel(),
   }
@@ -137,6 +142,7 @@ end
 
 local function Starte()
   LeuchtturmCharDB = LeuchtturmCharDB or {}
+  LeuchtturmDB     = LeuchtturmDB or {}
   local ctx = ErmittleKontext()
   ctx.db = LeuchtturmCharDB
   ctx.aktiveModule = {}
@@ -191,7 +197,10 @@ SlashCmdList.LEUCHTTURM = function(eingabe)
       tostring(ctx.name), tostring(ctx.realm), tostring(ctx.klasse), tostring(ctx.rolle or "–"),
       tostring(ctx.spec or "–"), tostring(ctx.spieler or "–")))
     ns.Ausgabe("Aktive Module: " .. (#ctx.aktiveModule > 0 and table.concat(ctx.aktiveModule, ", ") or "keine"))
-    for w, b in pairs(ns.befehle) do ns.Ausgabe("  /ltm " .. w .. " – " .. b.hilfe) end
+    local woerter = {}
+    for w in pairs(ns.befehle) do woerter[#woerter + 1] = w end
+    table.sort(woerter)
+    for _, w in ipairs(woerter) do ns.Ausgabe("  /ltm " .. w .. " – " .. ns.befehle[w].hilfe) end
     return
   end
 
