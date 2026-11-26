@@ -12,6 +12,7 @@ Aktueller Stand: **v0.4** (nur in der Mock-Umgebung getestet, noch nicht im echt
 - [`Leuchtturm/LIESMICH.md`](Leuchtturm/LIESMICH.md) – Installation, Config, Befehle, Bedienung
 - [`Werkzeug/`](Werkzeug/) – Hilfsskript für den Datenabgleich per Syncthing (Python 3)
 - [`tests/`](tests/) – nachgebaute WoW-Umgebung und Gesamttest (`sh tests/alle_tests.sh`)
+- [`docs/Erster_Ingame_Test.md`](docs/Erster_Ingame_Test.md) – Schritt-für-Schritt-Anleitung für den ersten Test im Spiel
 - [`docs/Leuchtturm_Uebergabe.md`](docs/Leuchtturm_Uebergabe.md) – Rahmenbedingungen, Aufbau, Entscheidungen, offene Punkte
 
 ## Installation (kurz)
