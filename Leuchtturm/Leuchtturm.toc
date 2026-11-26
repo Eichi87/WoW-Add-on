@@ -2,7 +2,7 @@
 ## Title: Leuchtturm
 ## Notes: Klassen-Helfer und Hinweissystem für Daniel und Julia (WoW: Forever)
 ## Author: Daniel Eichberger
-## Version: 0.4.0
+## Version: 0.4.1
 ## SavedVariables: LeuchtturmDB
 ## SavedVariablesPerCharacter: LeuchtturmCharDB
 

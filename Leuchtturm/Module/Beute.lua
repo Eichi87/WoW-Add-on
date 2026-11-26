@@ -184,7 +184,22 @@ ns:RegistriereModul({
       if not link then ns.Ausgabe("Bitte einen Gegenstand per Shift-Klick einfügen.") return end
       zuletzt[W.ItemID(link) or 0] = nil
       local ok, zeilen = pcall(B.Hinweise, link)
-      if ok and zeilen and #zeilen == 0 then ns.Ausgabe("Keine Hinweise zu " .. link) return end
+      if ok and zeilen and #zeilen == 0 then
+        ns.Ausgabe("Keine Hinweise zu " .. link)
+        local offen = {}
+        for _, e in ipairs(W.AlleCharaktere()) do
+          for _, bf in pairs(e.c.berufe or {}) do
+            if not bf.rezepteStand and W.BERUFE[W.BerufSchluessel(bf.name) or ""] and W.BERUFE[W.BerufSchluessel(bf.name)].rezeptKlasse then
+              offen[#offen + 1] = ("%s (%s)"):format(e.c.name or e.key, bf.name)
+            end
+          end
+        end
+        if #offen > 0 then
+          ns.Ausgabe("|cffffcc00Achtung:|r Rezepte noch nicht erfasst bei " .. table.concat(offen, ", ")
+            .. " – dort einmal das Berufsfenster öffnen.")
+        end
+        return
+      end
       Melde(link)
     end)
   end,

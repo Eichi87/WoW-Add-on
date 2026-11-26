@@ -16,6 +16,7 @@ sync() { # $1 = wer, $2 = Spieler
 syncthing() { # $1 von, $2 nach
   cp "$T/$1/Interface/AddOns/Leuchtturm_Sync/"*.lua "$T/$2/Interface/AddOns/Leuchtturm_Sync/"
 }
+echo "== Befunde aus dem ersten Ingame-Test"; lua5.1 tests/szenario.lua befunde "$T/daniel"
 echo "== Julia spielt, loggt aus"; lua5.1 tests/szenario.lua julia1 "$T/julia"
 sync julia Julia
 mkdir -p "$T/daniel/Interface/AddOns/Leuchtturm_Sync"; syncthing julia daniel
