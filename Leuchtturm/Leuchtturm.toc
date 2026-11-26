@@ -1,10 +1,17 @@
 ## Interface: 16001
 ## Title: Leuchtturm
-## Notes: Klassen-Helfer für Daniel und Julia (WoW: Forever)
+## Notes: Klassen-Helfer und Hinweissystem für Daniel und Julia (WoW: Forever)
 ## Author: Daniel Eichberger
-## Version: 0.3.0
+## Version: 0.4.0
+## SavedVariables: LeuchtturmDB
 ## SavedVariablesPerCharacter: LeuchtturmCharDB
 
 Config.lua
+Index.lua
 Core.lua
+Wissen.lua
 Module\Leiste.lua
+Module\Daten.lua
+Module\Beute.lua
+Module\Tooltip.lua
+Module\Abgleich.lua

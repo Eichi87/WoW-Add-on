@@ -7,6 +7,10 @@
      Schlüssel: "Charaktername" oder "Charaktername-Realm"
      (Realm wie im Spiel, ohne Leerzeichen; "Name-Realm" hat Vorrang).
 
+     spieler: wem der Charakter gehört ("Daniel", "Julia", später z. B.
+              "Björn" – beliebig viele). Darunter legt die Datenbasis ihn ab,
+              und so heißt die Spielerdatei im Syncthing-Ordner.
+              Fehlt ein Charakter hier, einmal /ltm ich <Name> eingeben.
      klasse : wird automatisch erkannt, hier nur zur Kontrolle.
               WARRIOR, PALADIN, HUNTER, ROGUE, PRIEST, SHAMAN, MAGE,
               WARLOCK, DRUID
@@ -54,9 +58,18 @@ Leuchtturm_Config = {
     ["Magiername"]     = { spieler = "Julia",  klasse = "MAGE",    rolle = "DD" },
     ["Hexername"]      = { spieler = "Daniel", klasse = "WARLOCK", rolle = "DD" },
     ["Schamanenname"]  = { spieler = "Julia",  klasse = "SHAMAN",  rolle = "DD" },
+    -- weitere Spieler einfach dazuschreiben, z. B.:
+    -- ["Bjoernsname"] = { spieler = "Björn", klasse = "ROGUE", rolle = "DD" },
   },
 
   module = {
+
+    -- Hinweissystem (v0.4). aktiv = false schaltet ein Modul ab.
+    daten    = { aktiv = true },                         -- Datenbasis (Pflicht für die anderen)
+    beute    = { aktiv = true, sperreSekunden = 60 },    -- Hinweise beim Looten
+    tooltip  = { aktiv = true, vergleiche = 2,           -- "Könnte brauchen" + Vergleichs-Tooltips
+                 altWarnungStunden = 24 },               -- ab diesem Alter steht der Datenstand dabei
+    abgleich = { aktiv = true, meldungBeimLogin = true },-- Daten der anderen über Index.lua
 
     leiste = {
       aktiv          = true,
