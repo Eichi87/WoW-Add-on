@@ -1,4 +1,4 @@
-# Leuchtturm – Übergabe (Stand 26.11.2026, v0.4.1)
+# Leuchtturm – Übergabe (Stand 28.11.2026, v0.4.2)
 
 Eigenes WoW-Forever-Addon für Daniel und Julia (weitere Spieler wie Björn möglich).
 - Klassen-Leiste (v0.3): erinnert an fehlende/auslaufende Buffs und Ressourcen, Klick wirkt den Zauber, keine Automatisierung.
@@ -30,6 +30,7 @@ Eigenes WoW-Forever-Addon für Daniel und Julia (weitere Spieler wie Björn mög
 - Krieger-Schlachtruf warnt nur im Kampf, alle anderen Einträge auch außerhalb.
 - Klick wirkt immer auf den Spieler selbst (unit = player).
 - Nach Ladebildschirm 3 s Ruhe, Warnton höchstens 1×/s.
+- v0.4.2: Verschieben/Skalieren über einen eingeblendeten Griff statt dauerhaft ziehbarer Buttons, damit Klicks auf die Leiste nie versehentlich verschieben. Größe 50–250 %.
 - v0.4: Syncthing-Ordner ist `Interface\AddOns\Leuchtturm_Sync` (neben dem Addon, ohne .toc, wird vom Spiel ignoriert), damit er ein Addon-Update übersteht. `Index.lua` liegt im Addon-Ordner und wird von jedem lokal erzeugt (nicht synchronisiert).
 - v0.4: Spielerdateien werden im Addon per `loadstring` + `setfenv` in einer leeren Umgebung ausgeführt; eine kaputte Datei stört nichts.
 - v0.4: Gespeicherte Ausrüstung und Rezept-Ergebnisse tragen Rüstungswert, Mindeststufe, Slot und Typ mit, damit die anderen ohne Item-Cache vergleichen können.
@@ -46,10 +47,12 @@ Paladin Tank, Druide Tank, Priester Heilig; Krieger, Jäger, Magier, Hexenmeiste
 - v0.4: Hinweissystem, Mock-Test mit zwei PCs und echtem Python-Skript.
 - 26.11.2026 erster Ingame-Test v0.4.0 (Daniel, Guile + Gomez): Build 16001 bestätigt, keine Lua-Fehler, alle 5 Module laden, Leiste erkennt fehlenden Schlachtruf. Befunde: Guile ohne Config-Eintrag landete unter Spieler „Unbekannt“, Realm beim Login leer („Guile-“), Berufe wurden beim Logout gelöscht, Rezepte wurden in keinem Beruf erfasst (0 Rezepte), Hinweise blieben deshalb leer.
 - v0.4.1 behebt das: Spieler wird kontoweit gelernt und „Unbekannt“-Einträge umgezogen, Realm-Rückfall über `GetRealmName`, Berufe beim Logout nicht mehr neu gelesen, Berufserkennung unscharf („Classic-Schmiedekunst“), Rezepte erst über die moderne, dann über die klassische API, Meldung „X Rezepte gespeichert“, neuer Befehl `/ltm diagnose`.
-- `tests/alle_tests.sh`: 66 Prüfungen (davon 13 für die Befunde des Ingame-Tests), alle bestanden.
+- 28.11.2026 zweiter Ingame-Test v0.4.1 (Daniel): grundsätzlich lauffähig, „ein paar Kinderkrankheiten“ (Details stehen noch aus). Wunsch: Buff-Leiste verschieben und skalieren.
+- v0.4.2: `/ltm verschieben` (Griff: ziehen + Mausrad), `/ltm groesse <Prozent>`, `/ltm reset` setzt auch die Größe zurück. Position wird als Mitte in Bildschirm-Einheiten gespeichert (`LeuchtturmCharDB.leiste.mitte`, `.skalierung`), damit die Größe die Leiste nicht verschiebt; alte `position` wird weiter gelesen.
+- `tests/alle_tests.sh`: 75 Prüfungen (13 für die Befunde des ersten Ingame-Tests, 9 für Verschieben/Skalieren), alle bestanden.
 
 ## Offene Punkte
-1. Zweiter Ingame-Test mit v0.4.1: Berufsfenster öffnen → erscheint „… Rezepte gespeichert“? Sonst `/ltm diagnose` bei offenem Fenster als Screenshot.
+1. Kinderkrankheiten aus dem zweiten Ingame-Test (28.11.) beschreiben lassen und beheben; Verschieben/Skalieren ingame prüfen.
 2. Danach Hinweise (Loot, `/ltm hinweis`, Tooltip) mit erfassten Rezepten prüfen.
 3. Prüfen: Zauber-Namen im deutschen Client (unsicher v. a. Vergeltungsaura, Göttlicher Willen, Aura des Volltreffers), ob Klick den höchsten Rang wirkt.
 4. Restliche echte Charakternamen eintragen (mit `spieler`), auch Julias.

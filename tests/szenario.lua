@@ -169,6 +169,33 @@ elseif rolle == "daniel" then
   -- Leiste läuft weiter
   t = Befehl("leiste")
   Pruefe(Enthaelt(t, "Schlachtruf"), "Klassen-Leiste: Schlachtruf vorhanden")
+
+  -- Leiste verschieben und skalieren (Wunsch aus dem zweiten Test)
+  local L, db = LeuchtturmLeiste, LeuchtturmCharDB.leiste
+  local function Mitte() local x, y = L:GetCenter(); local s = L:GetScale(); return x * s, y * s end
+  local x0, y0 = Mitte()
+  Pruefe(math.abs(x0 - 500) < 0.01 and math.abs(y0 - 120) < 0.01, "Startposition Mitte, 180 unter der Bildschirmmitte")
+  t = Befehl("verschieben")
+  local griff
+  for _, f in ipairs(M.alleFrames or {}) do if f.scripts.OnMouseWheel then griff = f end end
+  Pruefe(griff and griff.shown, "/ltm verschieben zeigt den Griff")
+  griff.scripts.OnDragStart(griff); M.Ziehe(L, 100, 50); griff.scripts.OnDragStop(griff)
+  local x1, y1 = Mitte()
+  Pruefe(math.abs(x1 - 600) < 0.01 and math.abs(y1 - 170) < 0.01 and db.mitte, "Ziehen verschiebt und speichert die Mitte")
+  griff.scripts.OnMouseWheel(griff, 1); griff.scripts.OnMouseWheel(griff, 1)
+  Pruefe(math.abs(L:GetScale() - 1.1) < 0.001, "Mausrad vergrößert in 5-%-Schritten")
+  local x2, y2 = Mitte()
+  Pruefe(math.abs(x2 - 600) < 0.01 and math.abs(y2 - 170) < 0.01, "Größenänderung lässt die Mitte stehen")
+  t = Befehl("groesse 80")
+  Pruefe(math.abs(db.skalierung - 0.8) < 0.001 and Enthaelt(t, "80 %"), "/ltm groesse 80")
+  Befehl("groesse 999")
+  Pruefe(db.skalierung == 2.5, "Größe nach oben begrenzt")
+  M.Feuer("PLAYER_REGEN_DISABLED")
+  Pruefe(not griff.shown, "Kampfbeginn sperrt die Leiste")
+  M.Feuer("PLAYER_REGEN_ENABLED")
+  Befehl("reset")
+  local x3, y3 = Mitte()
+  Pruefe(db.skalierung == nil and math.abs(x3 - 500) < 0.01 and math.abs(y3 - 120) < 0.01, "/ltm reset setzt Position und Größe zurück")
   t = Befehl("daten")
   print(t)
   Pruefe(Enthaelt(t, "Daniel (du): 2 Charakter(e), 2 Berufe, 2 Rezepte"), "/ltm daten: Daniels Zählung")

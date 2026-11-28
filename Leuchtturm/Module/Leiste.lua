@@ -6,8 +6,9 @@
    - gelb pulsierend: läuft bald aus / wird knapp / Begleiter unglücklich
    - rot pulsierend: fehlt / leer
   Linksklick wirkt den Zauber (auf dich selbst), Rechtsklick ggf. einen
-  zweiten (z. B. Tier wiederbeleben). Shift + Rechtsklick ziehen
-  verschiebt die Leiste (nicht im Kampf).
+  zweiten (z. B. Tier wiederbeleben). Verschieben und skalieren:
+  /ltm verschieben (Griff erscheint, ziehen + Mausrad), /ltm groesse 80,
+  oder Shift + Rechtsklick ziehen. Nicht im Kampf; je Charakter gespeichert.
 
   Arten (Feld "art" in der Config):
    buff     – Buff auf dir (Standard)
@@ -260,16 +261,64 @@ ns:RegistriereModul({
     anker:SetSize(g, g)
     anker:SetMovable(true)
     anker:SetClampedToScreen(true)
+    -- Position = Mitte der Leiste in UIParent-Einheiten (unabhängig von der
+    -- Skalierung, damit Größenänderungen die Leiste nicht wegschieben).
+    -- Beides wird je Charakter gespeichert (LeuchtturmCharDB.leiste).
+    local function Begrenze(wert) return math.max(0.5, math.min(2.5, wert)) end
     local function SetzeStartposition()
+      anker:SetScale(Begrenze(db.skalierung or 1))
       anker:ClearAllPoints()
-      local pos = db.position
-      if pos then
+      local s = anker:GetScale()
+      if db.mitte then
+        anker:SetPoint("CENTER", UIParent, "BOTTOMLEFT", db.mitte[1] / s, db.mitte[2] / s)
+      elseif db.position then                -- gespeichert von v0.3/v0.4
+        local pos = db.position
         anker:SetPoint(pos[1], UIParent, pos[2], pos[3], pos[4])
       else
-        anker:SetPoint("CENTER", UIParent, "CENTER", 0, -180)
+        anker:SetPoint("CENTER", UIParent, "CENTER", 0, -180 / s)
       end
     end
+    local function MerkePosition()
+      local x, y = anker:GetCenter()
+      if not x then return end
+      local s = anker:GetScale()
+      db.mitte, db.position = { x * s, y * s }, nil
+    end
+    local function SetzeGroesse(neu)
+      if InCombatLockdown() then ns.Ausgabe("Nicht im Kampf.") return end
+      MerkePosition()
+      db.skalierung = Begrenze(neu)
+      SetzeStartposition()
+    end
     SetzeStartposition()
+
+    -- Griff zum Verschieben und Skalieren (nur sichtbar nach /ltm verschieben)
+    local griff = CreateFrame("Frame", nil, anker)
+    griff:SetPoint("TOPLEFT", anker, "TOPLEFT", -6, 22)
+    griff:SetPoint("BOTTOMRIGHT", anker, "BOTTOMRIGHT", 6, -6)
+    griff:SetFrameStrata("DIALOG")
+    griff:EnableMouse(true)
+    griff:EnableMouseWheel(true)
+    griff:RegisterForDrag("LeftButton")
+    local griffFlaeche = griff:CreateTexture(nil, "BACKGROUND")
+    griffFlaeche:SetAllPoints()
+    griffFlaeche:SetColorTexture(0.31, 0.76, 0.97, 0.35)
+    local griffText = griff:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    griffText:SetPoint("TOP", griff, "TOP", 0, -4)
+    local function GriffText()
+      griffText:SetText(("Ziehen = verschieben · Mausrad = Größe (%d %%) · /ltm verschieben = fertig")
+        :format(math.floor((db.skalierung or 1) * 100 + 0.5)))
+    end
+    griff:SetScript("OnDragStart", function() if not InCombatLockdown() then anker:StartMoving() end end)
+    griff:SetScript("OnDragStop", function() anker:StopMovingOrSizing(); MerkePosition(); SetzeStartposition() end)
+    griff:SetScript("OnMouseWheel", function(_, richtung)
+      SetzeGroesse((db.skalierung or 1) + 0.05 * richtung); GriffText()
+    end)
+    griff:Hide()
+    local function Entsperren(an)
+      if an and InCombatLockdown() then ns.Ausgabe("Nicht im Kampf.") return end
+      if an then GriffText(); griff:Show() else griff:Hide() end
+    end
 
     for i, e in ipairs(eintraege) do
       local btn = CreateFrame("Button", "LeuchtturmKnopf" .. i, anker, "SecureActionButtonTemplate")
@@ -282,8 +331,7 @@ ns:RegistriereModul({
       end)
       btn:SetScript("OnDragStop", function()
         anker:StopMovingOrSizing()
-        local p, _, rp, x, y = anker:GetPoint(1)
-        db.position = { p, rp, x, y }
+        MerkePosition(); SetzeStartposition()
       end)
 
       local icon = btn:CreateTexture(nil, "ARTWORK")
@@ -322,7 +370,7 @@ ns:RegistriereModul({
         if e.bekannt then GameTooltip:AddLine("Linksklick: " .. e.bekannt, 1, 1, 1) end
         if e.bekanntRechts then GameTooltip:AddLine("Rechtsklick: " .. e.bekanntRechts, 1, 1, 1) end
         if e.wert then GameTooltip:AddLine(("Anzahl: %d (Minimum %d)"):format(e.wert, e.minimum), 1, 1, 1) end
-        GameTooltip:AddLine("Shift + Rechtsklick ziehen: Leiste verschieben", 0.7, 0.7, 0.7)
+        GameTooltip:AddLine("Verschieben/Größe: /ltm verschieben", 0.7, 0.7, 0.7)
         GameTooltip:Show()
       end)
       btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -514,6 +562,7 @@ ns:RegistriereModul({
         AktualisiereBuffs(); AlleSweeps()
       elseif ereignis == "PLAYER_REGEN_DISABLED" then
         imKampf = true
+        if griff:IsShown() then anker:StopMovingOrSizing(); MerkePosition(); Entsperren(false) end
       elseif ereignis == "PLAYER_REGEN_ENABLED" then
         imKampf = false
         Anordnen(); AktualisiereBuffs(); Langsam(); AlleSweeps()
@@ -569,10 +618,29 @@ ns:RegistriereModul({
         end
       end
     end)
-    ns:RegistriereBefehl("reset", "Position der Leiste zurücksetzen", function()
+    ns:RegistriereBefehl("reset", "Position und Größe der Leiste zurücksetzen", function()
       if InCombatLockdown() then ns.Ausgabe("Nicht im Kampf.") return end
-      db.position = nil
+      db.position, db.mitte, db.skalierung = nil, nil, nil
       SetzeStartposition()
+      if griff:IsShown() then GriffText() end
+    end)
+    ns:RegistriereBefehl("verschieben", "Leiste verschieben und skalieren (nochmal eingeben = fertig)", function()
+      Entsperren(not griff:IsShown())
+      if griff:IsShown() then
+        ns.Ausgabe("Leiste entsperrt: mit der Maus ziehen, Mausrad ändert die Größe. Fertig mit /ltm verschieben.")
+      else
+        ns.Ausgabe("Leiste gesperrt, Position und Größe gespeichert.")
+      end
+    end)
+    ns:RegistriereBefehl("groesse", "Größe der Leiste in Prozent setzen, z. B. /ltm groesse 80 (50–250)", function(rest)
+      local prozent = tonumber((rest or ""):match("%d+"))
+      if not prozent then
+        ns.Ausgabe(("Größe: %d %%. Ändern mit /ltm groesse 80"):format(math.floor((db.skalierung or 1) * 100 + 0.5)))
+        return
+      end
+      SetzeGroesse(prozent / 100)
+      if griff:IsShown() then GriffText() end
+      ns.Ausgabe(("Größe der Leiste: %d %%"):format(math.floor((db.skalierung or 1) * 100 + 0.5)))
     end)
 
     Anordnen(); AktualisiereBuffs(); Langsam(); AlleSweeps()

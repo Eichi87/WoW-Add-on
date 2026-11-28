@@ -5,7 +5,7 @@ erinnert an fehlende oder auslaufende Buffs und Ressourcen; ein Klick wirkt den 
 Keine Automatisierung. Dazu ein charakterübergreifendes Hinweissystem: wer braucht dieses
 Rezept, dieses Material, diesen Gegenstand – über alle Spieler, abgeglichen per Syncthing.
 
-Aktueller Stand: **v0.4.1** (v0.4.0 einmal im Spiel getestet, Befunde behoben; v0.4.1 noch nicht im Spiel getestet).
+Aktueller Stand: **v0.4.2** (zweimal im Spiel getestet, Leiste jetzt verschieb- und skalierbar).
 
 ## Inhalt
 - [`Leuchtturm/`](Leuchtturm/) – der Addon-Ordner, so wie er nach `Interface\AddOns\` kopiert wird
