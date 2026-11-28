@@ -1,4 +1,4 @@
-# Leuchtturm – Addon für WoW: Forever (v0.4.1)
+# Leuchtturm – Addon für WoW: Forever (v0.4.2)
 
 Zwei Teile:
 - **Klassen-Leiste** (seit v0.3): erinnert an fehlende/auslaufende Buffs und Ressourcen, Klick wirkt den Zauber.
@@ -31,7 +31,9 @@ Klasse anzeigt, steht ebenfalls dort. Unter `module` lässt sich jedes Modul abs
 | `/ltm`           | erkannter Charakter, Klasse, Rolle, Spec, aktive Module, Befehle  |
 | `/ltm leiste`    | alle Einträge der Leiste und Status (zeigt auch falsche Namen)    |
 | `/ltm test`      | Warnungen der Leiste durchspielen                                 |
-| `/ltm reset`     | Leiste zurück in die Bildschirmmitte                              |
+| `/ltm verschieben` | Leiste entsperren: ziehen = verschieben, Mausrad = Größe; nochmal eingeben = fertig |
+| `/ltm groesse 80` | Größe der Leiste in Prozent (50–250)                            |
+| `/ltm reset`     | Leiste zurück in die Bildschirmmitte, Größe 100 %                 |
 | `/ltm daten`     | alle Spieler und Charaktere mit Berufen, Rezeptzahl und Datenstand |
 | `/ltm neu`       | neu laden (= `/reload`), um frische Daten der anderen einzulesen  |
 | `/ltm hinweis [Link]` | Hinweise zu einem Gegenstand (Link per Shift-Klick einfügen) |
@@ -41,7 +43,11 @@ Klasse anzeigt, steht ebenfalls dort. Unter `module` lässt sich jedes Modul abs
 ## Leiste
 - Ein Button pro Eintrag. Linksklick wirkt den Zauber auf dich selbst,
   beim Jäger-Begleiter wirkt Rechtsklick „Tier wiederbeleben".
-- Shift + Rechtsklick ziehen verschiebt die Leiste (nur außerhalb des Kampfes).
+- Verschieben und Größe: `/ltm verschieben` eingeben, dann erscheint ein blauer Griff über der Leiste.
+  Mit der linken Maustaste ziehen, mit dem Mausrad die Größe ändern (5-%-Schritte), zum Abschluss
+  wieder `/ltm verschieben`. Alternativ `/ltm groesse 80` bzw. Shift + Rechtsklick ziehen.
+  Geht nur außerhalb des Kampfes (bei Kampfbeginn sperrt sich die Leiste automatisch) und wird je
+  Charakter gespeichert.
 - Blass/grau: in Ordnung. Gelb: läuft bald aus / wird knapp / Begleiter unglücklich.
   Rot: fehlt bzw. leer. Seelensplitter und Munition zeigen immer ihre Anzahl.
 - Zauber, die der Charakter noch nicht kennt, erscheinen nicht.

@@ -38,6 +38,7 @@ Frame.__index = function(t, k) return Frame[k] or function() end end
 local function Neu(name)
   local f = setmetatable({ scripts = {}, shown = false, lines = {}, name = name }, Frame)
   if name then _G[name] = f end
+  M.alleFrames = M.alleFrames or {}; table.insert(M.alleFrames, f)
   return f
 end
 function Frame:RegisterEvent(e)
@@ -76,6 +77,27 @@ function Frame:SetHyperlink(link)
   self:AddLine(it.name)
   for _, z in ipairs(M.Zeilen(it)) do self:AddLine(z) end
   for _, pc in ipairs(M.postcalls) do pc(self) end
+end
+function Frame:SetScale(x) self.scale = x end
+function Frame:GetScale() return self.scale or 1 end
+-- vereinfachte Geometrie: nur Punkte relativ zu UIParent-BOTTOMLEFT bzw. -CENTER (1000 x 600)
+function Frame:ClearAllPoints() self.punkt = nil end
+function Frame:SetPoint(p, rel, rp, x, y)
+  if type(rel) ~= "table" then return end
+  if rel == UIParent then self.punkt = { p, rp, x or 0, y or 0 } end
+end
+function Frame:GetCenter()
+  local pt = self.punkt
+  if not pt then return nil end
+  local s = self:GetScale()
+  if pt[2] == "BOTTOMLEFT" then return pt[3], pt[4] end
+  return 500 / s + pt[3], 300 / s + pt[4]        -- "CENTER"
+end
+function Frame:StartMoving() self.bewegt = true end
+function Frame:StopMovingOrSizing() self.bewegt = false end
+function M.Ziehe(frame, dx, dy)   -- Ziehen in Bildschirm-Einheiten (UIParent)
+  local x, y = frame:GetCenter(); local s = frame:GetScale()
+  frame.punkt = { "CENTER", "BOTTOMLEFT", x + dx / s, y + dy / s }
 end
 function CreateFrame(_, name) return Neu(name) end
 UIParent, WorldFrame = Neu("UIParent"), Neu("WorldFrame")
